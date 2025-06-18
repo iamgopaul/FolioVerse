@@ -32,9 +32,13 @@ export async function POST(req: Request) {
     `
 
     // Prepend the context as a system message
-    const augmentedMessages = [{ role: "system", content: portfolioContext }, ...messages]
+    const augmentedMessages = [
+      { role: "system", content: portfolioContext },
+      ...messages,
+    ]
 
-    const result = streamText({
+    // ✅ Add await here!
+    const result = await streamText({
       model: openai("gpt-4o"),
       messages: augmentedMessages,
     })
@@ -42,9 +46,13 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse()
   } catch (error) {
     console.error("Chat API error:", error)
-    return new Response(JSON.stringify({ error: "Failed to process chat request" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    })
+    return new Response(
+      JSON.stringify({ error: "Failed to process chat request" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    )
   }
 }
+
