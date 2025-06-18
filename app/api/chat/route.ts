@@ -17,13 +17,31 @@ export async function POST(req: Request) {
     })
 
     return response.toDataStreamResponse()
-  } catch (error: any) {
-    console.error("Chat API error:", error.message || error)
-    return new Response(JSON.stringify({ error: error.message || "Unknown error" }), {
+} catch (error: any) {
+  console.error("Chat API error:", error)
+  return new Response(
+    JSON.stringify({ error: error?.message || "Unknown server error" }),
+    {
       status: 500,
       headers: { "Content-Type": "application/json" },
+    }
+  )
+}
+
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json()
+    return new Response(JSON.stringify({ reply: `Echo: ${messages[0].content}` }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     })
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Test failed" }), { status: 500 })
   }
+}
+
+
 }
 
 
