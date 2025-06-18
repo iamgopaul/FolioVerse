@@ -1,47 +1,51 @@
-import { openai } from "@ai-sdk/openai"
-import { streamText } from "ai"
+import { NextRequest } from "next/server"
+import { NextRequest } from "next/server"
 
-export async function POST(req: Request) {
-  try {
-    const { messages } = await req.json()
+export async function POST(req: NextRequest) {
+  const { messages } = await req.json()
 
-    // Ensure OPENAI_API_KEY is set
-    if (!process.env.OPENAI_API_KEY) {
-      console.error("Missing OpenAI API key")
-      return new Response("Missing API key", { status: 500 })
-    }
+  const systemPrompt = {
+    role: "system",
+    content: `
+      You are a concise, professional AI assistant for FolioVerse.
+      Answer questions clearly, briefly, and helpfully. Avoid long intros.
+      Only mention Josh Gopaul or any other user background if asked. Keep replies to 1–2 sentences max.
+    `
+  }
 
-    const response = await streamText({
-      model: openai("gpt-4o"),
-      messages: messages, // already includes system context from frontend
-    })
+  const chatMessages = [systemPrompt, ...messages]
 
-    return response.toDataStreamResponse()
-} catch (error: any) {
-  console.error("Chat API error:", error)
-  return new Response(
-    JSON.stringify({ error: error?.message || "Unknown server error" }),
-    {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192",
+      messages: chatMessages,
+      max_tokens: 100,
+    }),
+  })
+
+  if (!response.ok) {
+    console.error("Groq API Error:", await response.text())
+    return new Response(JSON.stringify({ error: "Failed to fetch from Groq" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
-    }
-  )
-}
-
-
-export async function POST(req: Request) {
-  try {
-    const { messages } = await req.json()
-    return new Response(JSON.stringify({ reply: `Echo: ${messages[0].content}` }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
     })
-  } catch (e) {
-    return new Response(JSON.stringify({ error: "Test failed" }), { status: 500 })
   }
+
+  const data = await response.json()
+
+  return new Response(data.choices[0].message.content, {
+    status: 200,
+    headers: { "Content-Type": "text/plain" },
+  })
 }
 
 
-}
+
+
 
 
