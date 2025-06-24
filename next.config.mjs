@@ -9,13 +9,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    serverActions: true,                // ✅ MUST be enabled
-    serverActionsOriginCheck: false,    // ✅ This disables the check
-  },
+  // 🔥 No need for experimental.serverActions anymore in Next.js 14+
 }
 
-export default nextConfig
+export default nextConfig;
+
 
 
 
