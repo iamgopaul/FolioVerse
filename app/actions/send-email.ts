@@ -45,7 +45,6 @@ export async function sendContactEmail(
 
   const { name, email, subject, message } = validatedFields.data
 
-  // Make sure the API key exists
   if (!process.env.RESEND_API_KEY) {
     console.error("Missing RESEND_API_KEY in environment variables.")
     return {
@@ -59,8 +58,8 @@ export async function sendContactEmail(
 
   try {
     const { error } = await resend.emails.send({
-      from: "onboarding@resend.dev", // ✅ Verified sender
-      to: ["jgopa003@fiu.edu"],       // ✅ Replace with your receiving email
+      from: "FolioVerse <contact@folioverse.in>", // ✅ Use verified sender here
+      to: ["jgopa003@fiu.edu"],                   // ✅ Your receiving address
       subject: `New Contact Form Submission: ${subject}`,
       replyTo: email,
       html: `
@@ -95,4 +94,5 @@ export async function sendContactEmail(
     }
   }
 }
+
 
