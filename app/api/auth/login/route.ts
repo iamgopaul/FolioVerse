@@ -1,69 +1,55 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 
-// Mock database for users - in a real app, this would be a database
-const users = {
-  iamgopaul: {
-    email: "jgopa003@fiu.edu",
-    passwordHash: "hashed_password123", // In a real app, this would be properly hashed
-    username: "iamgopaul",
-    name: "Josh Gopaul",
-  },
-  johndoe: {
-    email: "john@example.com",
-    passwordHash: "hashed_password123", // In a real app, this would be properly hashed
-    username: "johndoe",
-    name: "John Doe",
-  },
-}
+const prisma = new PrismaClient();
 
-// Email to username mapping for email login
-const emailToUsername = {
-  "jgopa003@fiu.edu": "iamgopaul",
-  "john@example.com": "johndoe",
-}
+export async function POST(req: Request) {
+  console.log('✅ Login route hit');
 
-export async function POST(request: NextRequest) {
   try {
-    const { login, password } = await request.json()
+    const { email, password } = await req.json();
+    console.log({ email, password });
 
-    // Check if login is email or username
-    let username = login
-
-    // If login looks like an email, try to find the corresponding username
-    if (login.includes("@")) {
-      username = emailToUsername[login]
-      if (!username) {
-        return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 })
-      }
+    // Validate input
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email and password are required' },
+        { status: 400 }
+      );
     }
 
-    const user = users[username]
+    // Find user
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
     }
 
-    // In a real app, we would compare the password hash here
-    // For now, we'll just check if the password is "password123"
-    const isPasswordValid = password === "password123"
-
-    if (!isPasswordValid) {
-      return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 })
+    // Compare password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
     }
 
-    const token = Buffer.from(`${username}:${Date.now()}`).toString("base64")
+    // Strip password before sending user back
+    const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        email: user.email,
-        name: user.name,
-        username: user.username,
-      },
-    })
+    return NextResponse.json({ user: userWithoutPassword }, { status: 200 });
   } catch (error) {
-    console.error("Login error:", error)
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 })
+    console.error('Login Error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
+
+
+
