@@ -1,86 +1,36 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { PrismaClient } from '@prisma/client'
+import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
 
-// Mock database for users - in a real app, this would be a database
-const users: Record<string, any> = {
-  iamgopaul: {
-    username: "iamgopaul",
-    name: "Josh Gopaul",
-    email: "jgopa003@fiu.edu",
-    passwordHash: "hashed_password123", // In a real app, this would be properly hashed
-  },
-  johndoe: {
-    username: "johndoe",
-    name: "John Doe",
-    email: "john@example.com",
-    passwordHash: "hashed_password123", // In a real app, this would be properly hashed
-  },
-}
+const prisma = new PrismaClient()
 
-export async function POST(request: NextRequest) {
-  try {
-    const { name, email, password, username } = await request.json()
+export async function POST(req: Request) {
+  const { name, email, username, password } = await req.json()
 
-    // Validate required fields
-    if (!name || !email || !password || !username) {
-      return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 })
-    }
+  // Check for missing fields
+  if (!name || !email || !username || !password) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  }
 
-    // Check if username already exists (case insensitive)
-    const usernameExists = Object.keys(users).some(
-      (existingUsername) => existingUsername.toLowerCase() === username.toLowerCase(),
-    )
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({ where: { email } })
+  if (existingUser) {
+    return NextResponse.json({ error: 'User already exists' }, { status: 409 })
+  }
 
-    if (usernameExists) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Username already taken. Please choose another username.",
-        },
-        { status: 400 },
-      )
-    }
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Check if email already exists
-    const emailExists = Object.values(users).some((user: any) => user.email.toLowerCase() === email.toLowerCase())
-
-    if (emailExists) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Email already registered. Please use another email or login.",
-        },
-        { status: 400 },
-      )
-    }
-
-    // In a real app, we would hash the password here
-    const passwordHash = `hashed_${password}`
-
-    // Create new user
-    const newUser = {
-      username,
+  // Create user
+  const user = await prisma.user.create({
+    data: {
       name,
       email,
-      passwordHash,
-    }
+      username,
+      password: hashedPassword,
+    },
+  })
 
-    // In a real app, save to database
-    users[username] = newUser
-
-    // Generate token
-    const token = Buffer.from(`${username}:${Date.now()}`).toString("base64")
-
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        username,
-        name,
-        email,
-      },
-    })
-  } catch (error) {
-    console.error("Signup error:", error)
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 })
-  }
+  return NextResponse.json({ user }, { status: 201 })
 }
+
