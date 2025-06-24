@@ -10,10 +10,12 @@ export default function ResumePage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold tracking-tighter">Resume</h1>
           <div className="flex gap-2">
+            <a href="/resume.pdf" download>
             <Button variant="outline">
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
+            </a>
             <Button>
               <ExternalLink className="mr-2 h-4 w-4" />
               Print
