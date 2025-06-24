@@ -8,6 +8,8 @@ import { Footer } from "@/components/footer"
 import { AIChatbot } from "@/components/ai-chatbot"
 import { CustomBackground } from "@/components/custom-background"
 import { Toaster } from "sonner"
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -15,14 +17,10 @@ export const metadata: Metadata = {
   title: "FolioVerse - Showcase Your Portfolio",
   description:
     "The ultimate platform for creating and discovering amazing portfolios from developers, designers, and creators around the world.",
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -35,8 +33,14 @@ export default function RootLayout({
             <AIChatbot />
             <Toaster position="top-right" />
           </div>
+          {/* ✅ Analytics & Performance Tracking */}
+          <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
   )
 }
+
+
+
